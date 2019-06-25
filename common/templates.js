@@ -12,6 +12,29 @@
 
 const engine = TemplateEngine({ trim: 'front parts', mapper: s => escapeHtml((s+'') || ''), });
 
+exports.styles = () => (engine`
+body {
+	font-family: sans-serif;
+}
+img {
+	float: right;
+	max-width: 100%;
+	object-fit: scale-down;
+}
+figure {
+	display: block;
+	page-break-inside: avoid;
+	clear: both;
+}
+figcaption {
+	display: block;
+	font-weight: lighter;
+}
+h1, h2, h3, h4, h5, h6 {
+	font-family: serif;
+}
+`);
+
 exports.navHtml = ({ language, chapters, title, nav, }, prefix = '')  => (engine`
 <?xml version="1.0" encoding="UTF-8" ?>
 <html xmlns="http://www.w3.org/1999/xhtml"
@@ -48,7 +71,7 @@ exports.containerXml = ({ opf, }) => (engine`
 </container>
 `);
 
-exports.contentOpf = ({ guid, language, title, description, creators, published, chapters, resources, markNav, nav, cover, ncx, }) => (engine`
+exports.contentOpf = ({ guid, language, title, description, creators, published, chapters, resources, markNav, nav, cover, ncx, styles, }) => (engine`
 <?xml version="1.0" encoding="UTF-8"?>
 <package version="3.0"
 	xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -88,6 +111,9 @@ exports.contentOpf = ({ guid, language, title, description, creators, published,
 
 	<manifest>
 		<item id="ncx" href="${ ncx.name }" media-type="${ ncx.mimeType || 'application/x-dtbncx+xml' }"/>
+		${ If(styles) }
+		<item id="css" href="${ styles.name }" media-type="${ styles.mimeType || 'text/css' }"/>
+		${ End.If }
 		${ ForEach(chapters) }
 		<item id="chapter${ Index }" href="${ Call(v => v.name) }" media-type="${ Call(v => v.mimeType) }"${ If(markNav && (v => v === nav)) } properties="nav"${ End.If }/>
 		${ End.ForEach }
@@ -142,11 +168,14 @@ exports.contentNcx = ({ guid, language, title, /*description,*/ creators, /*publ
 </ncx>
 `);
 
-exports.htmlFrame = ({ content, title, }) => (engine`
+exports.htmlFrame = ({ content, title, }, { styles, }) => (engine`
 <!DOCTYPE html>
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		${ If(styles) }
+		<link rel="stylesheet" href="${ styles.name }" type="text/css"/>
+		${ End.If }
 		<title>${ title }</title>
 	</head>
 	<body>
@@ -155,13 +184,16 @@ ${ NoMap(content) }
 </html>
 `);
 
-exports.xhtmlFrame = ({ content, title, }) => (engine`
+exports.xhtmlFrame = ({ content, title, }, { styles, }) => (engine`
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
 		<title>${ title }</title>
+		${ If(styles) }
+		<link rel="stylesheet" href="${ styles.name }" type="text/css"/>
+		${ End.If }
 	</head>
 	<body>
 ${ NoMap(content) }

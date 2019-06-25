@@ -43,12 +43,20 @@ class EPub {
 		let author = this.creators.find(it => it.role === 'author');
 		!author && this.creators.push((author = { name: '<unknown>', role: 'author', }));
 
+		if (this.styles !== false && typeof this.styles !== 'object') {
+			this.styles = {
+				name: 'style.css',
+				mimeType: 'text/css',
+				content: Templates.styles(),
+			};
+		}
+
 		this.chapters.forEach(chapter =>
 			chapter.mimeType === 'text/html-body'
-			&& (chapter.content = Templates.htmlFrame(chapter))
+			&& (chapter.content = Templates.htmlFrame(chapter, this))
 			&& (chapter.mimeType = mimeTypes.html)
 			|| chapter.mimeType === 'text/xhtml-body'
-			&& (chapter.content = Templates.xhtmlFrame(chapter))
+			&& (chapter.content = Templates.xhtmlFrame(chapter, this))
 			&& (chapter.mimeType = mimeTypes.xhtml)
 		);
 
@@ -84,6 +92,7 @@ class EPub {
 				content: Templates.navHtml(this),
 			});
 		}
+
 
 		if (this.ncx !== false && typeof this.ncx !== 'object') {
 			this.ncx = {
@@ -144,6 +153,7 @@ class EPub {
 		[
 			this.opf,
 			this.ncx,
+			this.styles,
 		].concat(
 			this.chapters,
 			this.resources.filter(_=>_.content)
